@@ -7,6 +7,7 @@ enum Result<T> {
     case Value(T)
     case Error(NSError)
     
+    // Functor is any type that defines how map applies to it.
     func map<U>(f: T -> U) -> Result<U> {
         switch self {
         case let .Value(value):
@@ -39,6 +40,12 @@ enum Result<T> {
     }
 }
 
+infix operator <^> { associativity left }
+
+func <^><T, U>(f: T -> U, a: Result<T>) -> Result<U> {
+    return a.map(f)
+}
+
 /*:
 ### Sample #1 (simple)
 */
@@ -58,8 +65,14 @@ func divideByTwo_flatMap(value: Int) -> Result<Int> {
     return Result<Int>.Error(NSError(domain: "error", code: 0, userInfo: nil))
 }
 
-let result1 = Result<Int>.Value(10).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map)
-let result2 = Result<Int>.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
+// Let's see what is the difference between map and flatMap?
+let result1 = Result.Value(10).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map)
+let result2 = Result.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
+
+// Let's do the same with infix operator. Just because we can :)
+let result3 = divideByTwo_map <^> (divideByTwo_map <^> (divideByTwo_map <^> Result.Value(10)))
+let result4 = Result.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
+
 
 /*:
 ### Sample #2 (complex)
@@ -69,19 +82,17 @@ let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(r
 let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
 session.dataTaskWithRequest(request) { (data, response, error) -> Void in
-    
-    let result = getHTTPURLResponse(data, response: response!).flatMap(checkStatusCode).flatMap(checkDataNotEmpty).flatMap(parseData).flatMap(createWeatherObject)
-    
+    let result = checkTaskError(data, response: response, error: error).flatMap(getHTTPURLResponse).flatMap(checkStatusCode).flatMap(checkDataNotEmpty).flatMap(parseData).flatMap(createWeatherObject)
     switch result {
     case let .Value(value) :
         print("\(value)")
     case let .Error(error) :
         print(error)
     }
-    
 }.resume()
 
 
+///
 
 enum WeatherType: Int {
     case Rainy = 0
@@ -126,7 +137,15 @@ enum WeatherError: Int {
 
 // sample of logic in bunch of functions
 
-func getHTTPURLResponse(data: NSData?, response: NSURLResponse) -> Result<(NSData?, NSHTTPURLResponse)> {
+func checkTaskError(data: NSData?, response: NSURLResponse?, error: NSError?) -> Result<(NSData?, NSURLResponse?)> {
+    if let error = error {
+        return Result<(NSData?, NSURLResponse?)>.Error(error)
+    }
+    
+    return Result.Value((data, response))
+}
+
+func getHTTPURLResponse(data: NSData?, response: NSURLResponse?) -> Result<(NSData?, NSHTTPURLResponse)> {
     if let response = response as? NSHTTPURLResponse {
         return Result.Value(data, response)
     }
