@@ -27,6 +27,7 @@ enum Result<T> {
         }
     }
     
+    // Monads apply a function that returns a wrapped value to a wrapped value
     func flatMap<U>(f: T -> Result<U>) -> Result<U> {
         return Result.flatten(map(f))
     }
