@@ -17,6 +17,16 @@ enum Result<T> {
         }
     }
     
+    // Applicative is a type where even functions may be wrapped in a context
+    func apply<U>(f: Result<(T -> U)>) -> Result<U> {
+        switch f {
+            case .Value(let someF):
+                return self.map(someF)
+            case let .Error(error):
+                return Result<U>.Error(error)
+        }
+    }
+    
     func flatMap<U>(f: T -> Result<U>) -> Result<U> {
         return Result.flatten(map(f))
     }
@@ -41,9 +51,18 @@ enum Result<T> {
 }
 
 infix operator <^> { associativity left }
-
 func <^><T, U>(f: T -> U, a: Result<T>) -> Result<U> {
     return a.map(f)
+}
+
+infix operator <*> { associativity left }
+func <*><T, U>(f: Result<(T -> U)>, a: Result<T>) -> Result<U> {
+    return a.apply(f)
+}
+
+infix operator >>- { associativity left }
+func >>-<T, U>(a: Result<T>, f: T -> Result<U>) -> Result<U> {
+    return a.flatMap(f)
 }
 
 /*:
@@ -66,13 +85,17 @@ func divideByTwo_flatMap(value: Int) -> Result<Int> {
 }
 
 // Let's see what is the difference between map and flatMap?
-let result1 = Result.Value(10).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map)
-let result2 = Result.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
+Result.Value(10).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map).map(divideByTwo_map)
+Result.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
 
 // Let's do the same with infix operator. Just because we can :)
-let result3 = divideByTwo_map <^> (divideByTwo_map <^> (divideByTwo_map <^> Result.Value(10)))
-let result4 = Result.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap).flatMap(divideByTwo_flatMap)
+divideByTwo_map <^> (divideByTwo_map <^> (divideByTwo_map <^> Result.Value(10)))
+Result.Value(10) >>- divideByTwo_flatMap >>- divideByTwo_flatMap >>- divideByTwo_flatMap
 
+// Let's try apply
+let wrappedFunc = Result.Value(divideByTwo_map)
+Result.Value(10).apply(wrappedFunc).apply(wrappedFunc).apply(wrappedFunc)
+wrappedFunc <*> (wrappedFunc <*> (wrappedFunc <*> Result.Value(10)))
 
 /*:
 ### Sample #2 (complex)
