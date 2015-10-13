@@ -105,7 +105,7 @@ let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(r
 let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
 session.dataTaskWithRequest(request) { (data, response, error) -> Void in
-    let result = checkTaskError(data, response: response, error: error).flatMap(getHTTPURLResponse).flatMap(checkStatusCode).flatMap(checkDataNotEmpty).flatMap(parseData).flatMap(createWeatherObject)
+    let result = checkTaskError(data, response: response, error: error) >>- (getHTTPURLResponse) >>- (checkStatusCode) >>- (checkDataNotEmpty) >>- (parseData) >>- (createWeatherObject)
     switch result {
     case let .Value(value) :
         print("\(value)")
