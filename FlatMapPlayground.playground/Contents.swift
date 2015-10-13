@@ -64,6 +64,24 @@ let result2 = Result<Int>.Value(10).flatMap(divideByTwo_flatMap).flatMap(divideB
 /*:
 ### Sample #2 (complex)
 */
+// Echo JSON: Returns a customized JSON object that you can define through a REST-style URL (see http://www.jsontest.com for documentation)
+let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(random()%4)/temperature/\((random()%50-20))")!)
+let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
+
+session.dataTaskWithRequest(request) { (data, response, error) -> Void in
+    
+    let result = getHTTPURLResponse(data, response: response!).flatMap(checkStatusCode).flatMap(checkDataNotEmpty).flatMap(parseData).flatMap(createWeatherObject)
+    
+    switch result {
+    case let .Value(value) :
+        print("\(value)")
+    case let .Error(error) :
+        print(error)
+    }
+    
+}.resume()
+
+
 
 enum WeatherType: Int {
     case Rainy = 0
@@ -104,22 +122,6 @@ enum WeatherError: Int {
     case NoData
     case IncorrectStructure
 }
-
-// Echo JSON: Returns a customized JSON object that you can define through a REST-style URL (see http://www.jsontest.com for documentation)
-let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(random()%4)/temperature/\((random()%50-20))")!)
-let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
-
-session.dataTaskWithRequest(request) { (data, response, error) -> Void in
-    let result = getHTTPURLResponse(data, response: response!).flatMap(checkStatusCode).flatMap(checkDataNotEmpty).flatMap(parseData).flatMap(createWeatherObject)
-    
-    switch result {
-    case let .Value(value) :
-        print("\(value)")
-    case let .Error(error) :
-        print(error)
-    }
-    
-}.resume()
 
 
 // sample of logic in bunch of functions
