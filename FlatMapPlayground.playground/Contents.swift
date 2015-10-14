@@ -102,7 +102,7 @@ wrappedFunc <*> (wrappedFunc <*> (wrappedFunc <*> Result.Value(10)))
 ### Sample #2 (complex)
 */
 // Echo JSON: Returns a customized JSON object that you can define through a REST-style URL (see http://www.jsontest.com for documentation)
-let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(random()%4)/temperature/\((random()%50-20))")!)
+let request = NSURLRequest(URL: NSURL(string: "http://echo.jsontest.com/type/\(rand()%4)/temperature/\((rand()%50-20))")!)
 let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
 session.dataTaskWithRequest(request) { (data, response, error) -> Void in
