@@ -158,6 +158,11 @@ enum WeatherError: Int {
     case IncorrectStructure
 }
 
+enum Errors: ErrorType {
+    case MyError
+    case YourError
+}
+
 
 // sample of logic in bunch of functions
 
@@ -174,7 +179,7 @@ func getHTTPURLResponse(data: NSData?, response: NSURLResponse?) -> Result<(NSDa
         return Result.Value(data, response)
     }
     
-    return Result<(NSData?, NSHTTPURLResponse)>.Error(NSError(domain: errorDomain, code: WeatherError.UnknownError.rawValue, userInfo: nil))
+    return Result<(NSData?, NSHTTPURLResponse)>.Error(Errors.MyError) //(NSError(domain: errorDomain, code: WeatherError.UnknownError.rawValue, userInfo: nil))
 }
 
 func checkStatusCode(data: NSData?, response: NSHTTPURLResponse) -> Result<NSData?> {
